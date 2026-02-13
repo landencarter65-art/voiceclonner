@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
@@ -18,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-HUGGING_FACE_SPACE_URL = os.getenv("HUGGING_FACE_SPACE_URL", "http://localhost:8001")
+HUGGING_FACE_SPACE_URL = os.getenv("HUGGING_FACE_SPACE_URL", "http://localhost:7860")
 
 class TTSRequest(BaseModel):
     text: str
@@ -37,12 +37,48 @@ async def generate_voice(request: TTSRequest):
         response = requests.post(
             f"{HUGGING_FACE_SPACE_URL}/generate",
             json=request.dict(),
-            timeout=60
+            timeout=120
         )
         
         if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail="AI Service Error")
+            raise HTTPException(status_code=response.status_code, detail=f"AI Service Error: {response.text}")
             
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/clone")
+async def clone_voice(
+    text: str = Form(...),
+    reference_text: str = Form(...),
+    language: str = Form("English"),
+    audio_file: UploadFile = File(...)
+):
+    try:
+        # Read file content
+        file_content = await audio_file.read()
+        
+        # Prepare multipart data
+        files = {
+            'audio_file': (audio_file.filename, file_content, audio_file.content_type)
+        }
+        data = {
+            'text': text,
+            'reference_text': reference_text,
+            'language': language
+        }
+        
+        # Forward to Hugging Face
+        response = requests.post(
+            f"{HUGGING_FACE_SPACE_URL}/clone",
+            data=data,
+            files=files,
+            timeout=120 # Increased timeout for cloning
+        )
+        
+        if response.status_code != 200:
+             raise HTTPException(status_code=response.status_code, detail=f"AI Service Cloning Error: {response.text}")
+
         return response.json()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
