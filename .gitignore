@@ -25,6 +25,3 @@ Thumbs.db
 .agents/
 .claude/
 .gemini/
-
-# Separate Repo
-hugging/
