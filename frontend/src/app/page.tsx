@@ -54,6 +54,12 @@ export default function Home() {
               </div>
             )}
 
+            {voice.status && !voice.error && (
+              <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm">
+                {voice.status}
+              </div>
+            )}
+
             {voice.audioSrc && <AudioOutput audioSrc={voice.audioSrc} />}
           </div>
         </div>

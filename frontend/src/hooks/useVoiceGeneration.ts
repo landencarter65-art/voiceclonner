@@ -22,12 +22,14 @@ export function useVoiceGeneration() {
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!text) return;
     setLoading(true);
     setError(null);
     setAudioSrc(null);
+    setStatus(null);
 
     try {
       const client = await Client.connect(spaceUrl);
@@ -39,7 +41,9 @@ export function useVoiceGeneration() {
       }) as any;
 
       if (result.data && result.data[0]) {
-        setAudioSrc(result.data[0].url);
+        const url = typeof result.data[0] === 'string' ? result.data[0] : result.data[0].url;
+        setAudioSrc(url);
+        if (result.data[1]) setStatus(result.data[1]);
       } else {
         throw new Error("No audio generated");
       }
@@ -58,20 +62,23 @@ export function useVoiceGeneration() {
     setLoading(true);
     setError(null);
     setAudioSrc(null);
+    setStatus(null);
 
     try {
       const client = await Client.connect(spaceUrl);
-      const audio_blob = await handle_file(refFile);
+      const audio_data = await handle_file(refFile);
 
       const result = await client.predict("/clone_fn", {
         text: cloneText,
-        reference_audio_path: audio_blob,
+        reference_audio_path: audio_data,
         reference_text: refText,
         language: "English",
       }) as any;
 
       if (result.data && result.data[0]) {
-        setAudioSrc(result.data[0].url);
+        const url = typeof result.data[0] === 'string' ? result.data[0] : result.data[0].url;
+        setAudioSrc(url);
+        if (result.data[1]) setStatus(result.data[1]);
       } else {
         throw new Error("Cloning failed to return audio");
       }
@@ -94,6 +101,6 @@ export function useVoiceGeneration() {
     refFile, setRefFile,
     handleClone,
     // Common
-    audioSrc, loading, error,
+    audioSrc, loading, error, status,
   };
 }

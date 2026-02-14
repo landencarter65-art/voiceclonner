@@ -1,7 +1,8 @@
 fastapi
 uvicorn
 torch
-qwen-tts
+torchaudio
+qwen-tts>=0.1.1
 soundfile
 numpy
 python-multipart
