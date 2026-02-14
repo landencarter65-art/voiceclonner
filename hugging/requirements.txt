@@ -1,11 +1,11 @@
 fastapi
 uvicorn
-torch
+torch>=2.4.0
 torchaudio
 qwen-tts>=0.1.1
 soundfile
 numpy
 python-multipart
-transformers
+transformers>=4.45.0
 accelerate
 huggingface_hub

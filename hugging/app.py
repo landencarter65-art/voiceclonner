@@ -5,8 +5,9 @@ import gradio as gr
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Global model variable
+# Global model variable and error message
 model = None
+load_error = None
 
 try:
     from qwen_tts import Qwen3TTSModel
@@ -19,18 +20,22 @@ try:
     
     model = Qwen3TTSModel.from_pretrained(
         model_id,
-        device_map=device,
+        device_map="auto" if device == "cuda" else None,
         dtype=dtype
     )
+    
+    if device == "cpu":
+        model = model.to("cpu")
     print(f"Model {model_id} loaded successfully on {device}.")
 except Exception as e:
+    load_error = str(e)
     print(f"Failed to load model: {e}")
     model = None
 
 # 1. Standard TTS Function
 def tts_fn(text, speaker, language, instruct):
     if not model:
-        return None, "Error: Model not loaded on server."
+        return None, f"Error: Model not loaded on server. {load_error or ''}"
     try:
         wavs, sr = model.generate_custom_voice(
             text=text,
@@ -38,16 +43,17 @@ def tts_fn(text, speaker, language, instruct):
             speaker=speaker,
             instruct=instruct,
         )
-        # Convert torch tensor to numpy for Gradio serialization
-        audio_data = wavs[0].cpu().numpy()
+        # Ensure correct shape and convert to numpy for Gradio serialization
+        audio_data = wavs[0].cpu().numpy().squeeze()
         return (sr, audio_data), "Success"
     except Exception as e:
+        print(f"TTS Error: {e}")
         return None, f"Generation Error: {str(e)}"
 
 # 2. Voice Cloning Function
 def clone_fn(text, reference_audio_path, reference_text, language):
     if not model:
-        return None, "Error: Model not loaded on server."
+        return None, f"Error: Model not loaded on server. {load_error or ''}"
     try:
         wavs, sr = model.generate_voice_clone(
             ref_audio=reference_audio_path,
@@ -55,10 +61,11 @@ def clone_fn(text, reference_audio_path, reference_text, language):
             text=text,
             language=language
         )
-        # Convert torch tensor to numpy
-        audio_data = wavs[0].cpu().numpy()
+        # Ensure correct shape and convert to numpy
+        audio_data = wavs[0].cpu().numpy().squeeze()
         return (sr, audio_data), "Cloning Successful"
     except Exception as e:
+        print(f"Cloning Error: {e}")
         return None, f"Cloning Error: {str(e)}"
 
 # Create Gradio Interface

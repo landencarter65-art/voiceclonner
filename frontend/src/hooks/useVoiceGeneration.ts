@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Client, handle_file } from "@gradio/client";
 
-export const speakers = ['Vivian', 'George', 'Alice', 'Bob', 'Charlie'];
+export const speakers = ['Vivian', 'George', 'Alice', 'Bob', 'Charlie', 'Ryan', 'Serena', 'Uncle_Fu', 'Dylan', 'Jada', 'Sunny'];
 
 export const spaceUrl = process.env.NEXT_PUBLIC_HF_SPACE_URL || "https://ytpybe-qwens.hf.space/";
 
@@ -40,6 +40,8 @@ export function useVoiceGeneration() {
         instruct,
       }) as any;
 
+      console.log("TTS Result:", result);
+
       if (result.data && result.data[0]) {
         const url = typeof result.data[0] === 'string' ? result.data[0] : result.data[0].url;
         setAudioSrc(url);
@@ -74,6 +76,8 @@ export function useVoiceGeneration() {
         reference_text: refText,
         language: "English",
       }) as any;
+
+      console.log("Clone Result:", result);
 
       if (result.data && result.data[0]) {
         const url = typeof result.data[0] === 'string' ? result.data[0] : result.data[0].url;
